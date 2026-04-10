@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Neon Tic Tac Toe Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--cyan:#00f7ff;--green:#00ffae;--red:#ff3b3b;}
+*{box-sizing:border-box}
+body{
+  margin:0;height:100vh;display:flex;align-items:center;justify-content:center;
+  background: radial-gradient(circle at 20% 0%, #0f2027, #000 70%);
+  font-family:'Orbitron',sans-serif;color:#e8faff;
+}
+.app{width:min(92vw,480px);}
+.header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.title{font-size:1.6rem;color:var(--cyan);text-shadow:0 0 12px var(--cyan)}
+.mode{display:flex;gap:8px}
+.pill{padding:6px 10px;border-radius:999px;border:1px solid rgba(255,255,255,.2);cursor:pointer}
+.pill.active{border-color:var(--cyan);box-shadow:0 0 10px var(--cyan)}
+
+.status{margin:10px 0 16px;color:#9fdfff}
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.cell{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:2.2rem;border-radius:16px;cursor:pointer;background:rgba(255,255,255,.05);box-shadow:0 0 10px rgba(0,247,255,.2);transition:.2s}
+.cell:hover{transform:translateY(-3px) scale(1.04);box-shadow:0 0 18px var(--cyan)}
+.cell.x{color:var(--red);text-shadow:0 0 14px var(--red)}
+.cell.o{color:var(--green);text-shadow:0 0 14px var(--green)}
+.cell.win{outline:2px solid var(--green);box-shadow:0 0 25px var(--green)}
+
+.controls{display:flex;gap:10px;justify-content:space-between;margin-top:14px}
+button{flex:1;padding:10px;border-radius:999px;border:none;cursor:pointer;background:linear-gradient(45deg,var(--cyan),var(--green));font-weight:600}
+button.secondary{background:transparent;border:1px solid rgba(255,255,255,.25);color:#cfefff}
+button:hover{transform:scale(1.05);box-shadow:0 0 18px var(--green)}
+
+.score{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+.card{padding:10px;border-radius:14px;background:rgba(255,255,255,.05);text-align:center}
+.label{font-size:.75rem;color:#9fdfff}
+.value{font-size:1.2rem;margin-top:4px}
+
+.footer{margin-top:8px;font-size:.7rem;color:#6ea6b6;text-align:center}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="title">Tic Tac Toe</div>
+    <div class="mode">
+      <div id="pvpBtn" class="pill active">2P</div>
+      <div id="aiBtn" class="pill">Vs AI</div>
+    </div>
+  </div>
+
+  <div id="status" class="status">Player X's turn</div>
+
+  <div id="board" class="board"></div>
+
+  <div class="controls">
+    <button onclick="restart()">Restart</button>
+    <button class="secondary" onclick="resetScores()">Reset Scores</button>
+  </div>
+
+  <div class="score">
+    <div class="card"><div class="label">Player X</div><div id="sx" class="value">0</div></div>
+    <div class="card"><div class="label">Draws</div><div id="sd" class="value">0</div></div>
+    <div class="card"><div class="label">Player O</div><div id="so" class="value">0</div></div>
+  </div>
+
+  <div class="footer">Neon UI • Minimax AI • Portfolio Ready</div>
+</div>
+
+<script>
+const boardEl = document.getElementById('board');
+const statusEl = document.getElementById('status');
+const sx = document.getElementById('sx');
+const so = document.getElementById('so');
+const sd = document.getElementById('sd');
+const pvpBtn = document.getElementById('pvpBtn');
+const aiBtn = document.getElementById('aiBtn');
+
+let mode = 'PVP'; // PVP or AI
+let current = 'X';
+let cells = Array(9).fill('');
+let active = true;
+let scores = {X:0, O:0, D:0};
+
+const wins = [
+  [0,1,2],[3,4,5],[6,7,8],
+  [0,3,6],[1,4,7],[2,5,8],
+  [0,4,8],[2,4,6]
+];
+
+function setMode(m){
+  mode = m; pvpBtn.classList.toggle('active', m==='PVP'); aiBtn.classList.toggle('active', m==='AI'); restart();
+}
+pvpBtn.onclick=()=>setMode('PVP');
+aiBtn.onclick=()=>setMode('AI');
+
+function create(){
+  boardEl.innerHTML='';
+  cells.forEach((_,i)=>{
+    const d=document.createElement('div');
+    d.className='cell';
+    d.onclick=()=>move(i);
+    boardEl.appendChild(d);
+  });
+}
+
+function move(i){
+  if(!active || cells[i]) return;
+  place(i,current);
+  if(endCheck()) return;
+  current = current==='X'?'O':'X';
+  updateStatus();
+  if(mode==='AI' && current==='O'){
+    setTimeout(()=>{
+      const best = bestMove();
+      place(best,'O');
+      if(endCheck()) return;
+      current='X'; updateStatus();
+    }, 350);
+  }
+}
+
+function place(i, p){
+  cells[i]=p; render();
+}
+
+function render(){
+  [...boardEl.children].forEach((c,i)=>{
+    c.textContent=cells[i];
+    c.classList.remove('x','o','win');
+    if(cells[i]==='X') c.classList.add('x');
+    if(cells[i]==='O') c.classList.add('o');
+  });
+}
+
+function endCheck(){
+  for(const [a,b,c] of wins){
+    if(cells[a] && cells[a]===cells[b] && cells[a]===cells[c]){
+      highlight([a,b,c]);
+      active=false;
+      scores[cells[a]]++;
+      updateScores();
+      statusEl.textContent = `✨ ${cells[a]} wins`;
+      return true;
+    }
+  }
+  if(!cells.includes('')){
+    active=false; scores.D++; updateScores();
+    statusEl.textContent = '⚡ Draw';
+    return true;
+  }
+  return false;
+}
+
+function highlight(arr){
+  arr.forEach(i=>boardEl.children[i].classList.add('win'));
+}
+
+function updateStatus(){
+  statusEl.textContent = mode==='AI' && current==='O' ? 'Computer thinking…' : `Player ${current}'s turn`;
+}
+
+function restart(){
+  cells=Array(9).fill(''); current='X'; active=true; create(); updateStatus(); render();
+}
+
+function updateScores(){
+  sx.textContent=scores.X; so.textContent=scores.O; sd.textContent=scores.D;
+}
+function resetScores(){ scores={X:0,O:0,D:0}; updateScores(); }
+
+// --- Minimax AI ---
+function bestMove(){
+  let bestScore=-Infinity, move=-1;
+  for(let i=0;i<9;i++){
+    if(!cells[i]){
+      cells[i]='O';
+      let score=minimax(cells,0,false);
+      cells[i]='';
+      if(score>bestScore){ bestScore=score; move=i; }
+    }
+  }
+  return move;
+}
+
+function minimax(board, depth, isMax){
+  const res = evaluate(board);
+  if(res!==null) return res - depth*(res>0?1:-1);
+
+  if(isMax){
+    let best=-Infinity;
+    for(let i=0;i<9;i++) if(!board[i]){
+      board[i]='O';
+      best=Math.max(best, minimax(board, depth+1, false));
+      board[i]='';
+    }
+    return best;
+  } else {
+    let best=Infinity;
+    for(let i=0;i<9;i++) if(!board[i]){
+      board[i]='X';
+      best=Math.min(best, minimax(board, depth+1, true));
+      board[i]='';
+    }
+    return best;
+  }
+}
+
+function evaluate(b){
+  for(const [a,b1,c] of wins){
+    if(b[a] && b[a]===b[b1] && b[a]===b[c]) return b[a]==='O'?10:-10;
+  }
+  if(!b.includes('')) return 0;
+  return null;
+}
+
+create(); updateScores(); updateStatus();
+</script>
+</body>
+</html>
