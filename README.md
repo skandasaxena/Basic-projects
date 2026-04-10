@@ -41,6 +41,26 @@ An interactive multiple-choice quiz that tests knowledge across various topics. 
 * **Technologies Used:** JavaScript (Objects/Arrays), HTML, and CSS.
 * **Logic Implementation:** Questions are stored in an array of objects. The app iterates through the array, compares user input to the "correct" key, and increments the score accordingly.
 
+### 4. Tic Tac Toe
+A modern Tic-Tac-Toe game with a glowing UI and smart AI.
+
+## 🚀 Features
+- Player vs Player & Player vs AI  
+- Unbeatable AI (Minimax)  
+- Neon UI with animations  
+- Scoreboard & restart option  
+
+## 🛠️ Tech Stack
+HTML, CSS, JavaScript  
+
+## 🎮 How to Run
+1. Download the project  
+2. Open `index.html` in browser  
+
+## 📌 Description
+This project demonstrates game logic, AI implementation, and UI design in a simple web app.
+
+
 ---
 
 ### How to Run These Projects
